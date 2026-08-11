@@ -1,13 +1,7 @@
 # ESP32-S3_Drum_Midi_Controller<br>
 
-This is a dual-core Electronic Drum (e-Drum) Trigger Module designed for the ESP32-S3.<br>
+This is an Electronic Drum (e-Drum) Trigger Module using the ESP32-S3.<br>
 It converts physical drum strikes that are picked up using piezo sensors into MIDI percussion note control messages over USB, allowing you to play virtual drum software on a computer.<br>
-
-## Core System Architecture
-
-This sketch uses FreeRTOS to split the workload across two separate processor cores:
-- Core 0 (The Communication Engine): Runs the standard Arduino setup() and loop(). It handles sending the USB MIDI messages and prints diagnostic reports to the Serial Monitor.
-- Core 1 (The Sensor Engine): Runs a dedicated, continuous background task (AnalogScanTask) that reads the piezo inputs to catch drum strikes.
 
 ## Hardware Configuration <br>
 
