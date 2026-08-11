@@ -2,7 +2,7 @@
 
 Convert piezo trigger inputs to Midi percussion control messages over USB<br><br>
 
-## Arduino IDE Configuration<br>
+## Arduino IDE Configuration <br>
 
 **Note:** <br>
 - To use native USB MIDI, a computer must be plugged into the native USB/OTG port on the module.<br>
@@ -19,5 +19,7 @@ Configure these settings in the Arduino IDE Tools menu:<br>
 | USB Mode        | "USB-OTG (TinyUSB)"     | Forces the ESP32-S3 to use the Adafruit TinyUSB stack to act as a class-compliant MIDI device.              |
 | USB CDC On Boot | "Enabled"               | Tells the chip to route standard Serial.print() communications over the same USB connection alongside MIDI. |
 | Upload Mode     | "USB-OTG CDC (TinyUSB)" | Allows the Arduino IDE to auto-reset the board and flash code directly over the native USB port.            |
+
+## Sketch Flowchart <br>
 
 <br><br>![PCB](/stuff/Trigger_Flowchart.png)<BR><BR>
