@@ -2,6 +2,18 @@
 
 Convert piezo trigger inputs to Midi percussion control messages over USB<br><br>
 
+## Hardware Configuration <br>
+
+### ESP32S3 to MCP3008 ADC Wiring <br>
+
+| ESP32-S3 Pin | Component / Function | Connection on MCP3008 |
+|--------------|----------------------|-----------------------|
+| GPIO 11      | SPI Clock (SCLK)     | CLK (Both Chips)      |
+| GPIO 12      | SPI Data In (MISO)   | DOUT (Both Chips)     |
+| GPIO 13      | SPI Data Out (MOSI)  | DIN (Both Chips)      |
+| GPIO 10      | Chip Select 1        | /CS on Chip 1         |
+| GPIO 9       | Chip Select 2        | /CS on Chip 2         |
+
 ## Arduino IDE Configuration <br>
 
 **Note:** <br>
