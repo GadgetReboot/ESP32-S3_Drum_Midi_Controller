@@ -42,4 +42,13 @@ Configure these settings in the Arduino IDE Tools menu:<br>
 
 ## Sketch Flowchart <br>
 
-<br><br>![PCB](/stuff/Trigger_Flowchart.png)<BR><BR>
+![PCB](/stuff/Trigger_Flowchart.png)<BR>
+
+## Drum Trigger Processing Features <br>
+
+The following processing features are implemented when responding to a piezo trigger event
+- Peak Harvesting (PEAK_WINDOW_MS): When a stick hit occurs and the piezo signal rises above a threshold, the input is monitored to harvest the highest peak within that time window. This peak represents the intensity of the hit.
+- Crosstalk Rejection (X_TALK_WINDOW_MS, X_TALK_RATIO): Hitting one drum/pad may accidentally trigger a nearby input if there isn't enough isolation.  The code checks if other inputs triggered at the same time and if those other signals are weak, they are ignored as crosstalk.
+- Blanking Time (BLANKING_TIME_MS): After a drum strike occurs, the drum/pad will vibrate naturally for a while. The system locks out the channel for a duration after a hit to prevent a single physical strike from triggering multiple notes.
+- Velocity curves (VelocityCurveMode): Sensors don't always feel natural when translating hit strength to digital MIDI volume/velocity (1 to 127). This code includes mapping/scaling to help the drum/pad response feel dynamically expressive and natural.
+
