@@ -2,7 +2,7 @@
 Convert piezo trigger inputs to Midi percussion control messages over USB<br><br>
 
 ## Arduino IDE Configuration<br>
-Open the Tools menu in the Arduino IDE and select Board: "ESP32S3 Dev Module"<br>
+Open the Tools menu in the Arduino IDE and select Board: "ESP32S3 Dev Module"<br><br>
 To use native USB MIDI, a computer must be plugged into the native USB/OTG port on the module.<br>
 Most ESP32-S3 DevKit boards feature two USB ports: one labeled UART/COM (connected to an on-board serial chip) and one labeled USB/OTG (connected directly to the ESP32-S3 chip).<br>
 Some modules don't label the two USB ports so experimentation is needed until the right port is chosen.<br><br>
