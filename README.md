@@ -4,9 +4,10 @@ Convert piezo trigger inputs to Midi percussion control messages over USB<br><br
 
 ## Hardware Configuration <br>
 
-The ESP32S3 interfaces with 1 or 2 external MCP3008 ADC chips on the SPI bus.  Each chip has 8 analog inputs so a total of up to 16 triggers can be used.<br>
-If less triggers are needed, the system can be limited to scanning less channels by changing the CHANNELS_IN_USE = xx; setting in the sketch.<br>
-As more channels are scanned, the system has less time to detect trigger peaks on each channel so for optimal performance, set the number of channels according to the number of inputs needed.<br>
+- The ESP32S3 interfaces with 1 or 2 external MCP3008 ADC chips on the SPI bus.
+- Each chip has 8 analog inputs so a total of up to 16 triggers can be used.
+- If less triggers are needed, the system can be limited to scanning less channels by changing the CHANNELS_IN_USE = xx; setting in the sketch.
+- As more channels are scanned, the system has less time to detect trigger peaks on each channel so for optimal performance, set the number of channels according to the number of inputs needed.<br>
 
 
 ### ESP32S3 to MCP3008 ADC Wiring <br>
