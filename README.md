@@ -40,9 +40,11 @@ Configure these settings in the Arduino IDE Tools menu:<br>
 | USB CDC On Boot | "Enabled"               | Tells the chip to route standard Serial.print() communications over the same USB connection alongside MIDI. |
 | Upload Mode     | "USB-OTG CDC (TinyUSB)" | Allows the Arduino IDE to auto-reset the board and flash code directly over the native USB port.            |
 
+![IDE_CFG](/stuff/ToolsCfg.png)<BR>
+
 ## Sketch Flowchart <br>
 
-![PCB](/stuff/Trigger_Flowchart.png)<BR>
+![FlowChart](/stuff/Trigger_Flowchart.png)<BR>
 
 ## Drum Trigger Processing Features <br>
 
