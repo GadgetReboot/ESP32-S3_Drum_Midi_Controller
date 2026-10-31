@@ -41,21 +41,27 @@
 #define CS_CHIP1 10
 #define CS_CHIP2 9
 
+// SPI Clk should be max 2.34MHz for 3.3V power 
+// or 3.6MHz for 5V power on MCP3008 (from datasheet)
+#define SPI_CLK_SPEED 2340000
+//#define SPI_CLK_SPEED 3600000
+
 // how many ADC inputs are being scanned
 // system reads starting at chip 1 ch0..7 then chip 2 ch0..7 in that order
 // eg. if CHANNELS_IN_USE = 4 the system will look at chip 1 ch0 thru ch3
-const uint8_t CHANNELS_IN_USE = 4;
+const uint8_t CHANNELS_IN_USE = 16;
 
 #define ADC_VREF 3.3  // Voltage Reference of the MCP3008 (5.0 or 3.3 volts expected)
 
 // --- TRIGGER TUNING CONSTANTS ---
-#define MIN_THRESHOLD 120    // adc minimum trigger threshold raw reading
 #define PEAK_WINDOW_MS 2     // 2ms harvesting window to collect trigger peaks
 #define BLANKING_TIME_MS 20  // lockout period before accepting a new trigger input once triggered
 #define X_TALK_WINDOW_MS 2   // filter window for channel crosstalk rejection
 #define X_TALK_RATIO 0.25
-#define MIDI_CHANNEL 10  //  percussion midi channel 10
-#define MAX_CHANNELS 16  //  total of 16 channels available across 2 chips to trigger midi notes
+#define MIDI_CHANNEL 10              //  percussion midi channel 10
+#define MAX_CHANNELS 16              //  total of 16 channels available across 2 chips to trigger midi notes
+const uint16_t MIN_THRESHOLD = 50;   //  Soft hit floor
+const uint16_t MAX_THRESHOLD = 700;  //  Hard hit limit
 
 const uint8_t drumNotes[MAX_CHANNELS] = {  // midi note numbers assigned to adc input channels. defined in midi_percussion_notes.h
   BassDrum1,
@@ -102,7 +108,7 @@ enum VelocityCurveMode {  // options to scale adc trigger levels to midi note ve
   CURVE_EXPONENTIAL
 };
 
-const VelocityCurveMode ACTIVE_CURVE = CURVE_SCURVE;
+const VelocityCurveMode ACTIVE_CURVE = CURVE_LOGARITHMIC;
 
 volatile uint32_t globalLoopCounter = 0;
 TaskHandle_t AnalogScanTaskHandle = NULL;
@@ -115,22 +121,34 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
 // eg. make sure light hits translate as light sounds and heavy hits map to loud playback properly
 // this may need to be tweaked based on the physical piezo assembly and resulting adc readings across the range
 uint8_t calculateCurveVelocity(uint16_t rawPeak, VelocityCurveMode mode) {
-  if (rawPeak <= MIN_THRESHOLD) return 1;
-  if (rawPeak >= 1023) return 127;
 
-  float x = (float)(rawPeak - MIN_THRESHOLD) / (1023 - MIN_THRESHOLD);
+  // for readings outside of expected signal range, clamp to min or max thresholds
+  if (rawPeak <= MIN_THRESHOLD) return 1;
+  if (rawPeak >= MAX_THRESHOLD) return 127;
+
+  // normalize x from 0.0 to 1.0
+  float x = (float)(rawPeak - MIN_THRESHOLD) / (MAX_THRESHOLD - MIN_THRESHOLD);
   float y = x;
 
+  // apply scaling curve profile
   switch (mode) {
-    case CURVE_LINEAR: y = x; break;
-    case CURVE_SCURVE: y = x * x * (3.0f - 2.0f * x); break;
-    case CURVE_LOGARITHMIC: y = sqrtf(x); break;
-    case CURVE_EXPONENTIAL: y = x * x; break;
+    case CURVE_LINEAR:
+      y = x;
+      break;
+    case CURVE_SCURVE:
+      y = x * x * (3.0f - 2.0f * x);
+      break;
+    case CURVE_LOGARITHMIC:
+      y = sqrtf(x);
+      break;
+    case CURVE_EXPONENTIAL:
+      y = x * x;
+      break;
   }
 
-  uint8_t finalVelocity = 1 + (uint8_t)(y * 126.0f);
-  if (finalVelocity > 127) finalVelocity = 127;
-  return finalVelocity;
+  // scale output to standard MIDI velocity
+  float velocityOut = y * 126.0f + 1.0f;
+  return (uint8_t)constrain(velocityOut, 1, 127);
 }
 
 // read a sample from a specified adc MCP3008 chip and channel
@@ -155,7 +173,7 @@ void AnalogScanTask(void* pvParameters) {
     uint32_t now = millis();
 
     // read new samples for all adc channels
-    SPI.beginTransaction(SPISettings(3600000, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(SPI_CLK_SPEED, MSBFIRST, SPI_MODE0));
     for (uint8_t i = 0; i < CHANNELS_IN_USE; i++) {
       if (i < 8) currentReading[i] = readMCP3008_FastArduino(CS_CHIP1, i);
       else currentReading[i] = readMCP3008_FastArduino(CS_CHIP2, i - 8);
@@ -257,6 +275,8 @@ void loop() {
 
     Serial.println("\n=================== DIAGNOSTIC REPORT ===================");
     Serial.printf("Active Channels Polled: %u / 16\n", CHANNELS_IN_USE);
+    Serial.print("SPI Clock: ");
+    Serial.println(SPI_CLK_SPEED);
     Serial.printf("[SYSTEM ENGINE SPEED] Full-Kit Scans Per Second: %u Hz\n", scans);
     Serial.printf("[TIMING] Full Kit Sweep Loop Time: %.2f us\n", sweepTimeUs);
     Serial.printf("[TIMING] Time Spacing Between Individual Channel Readings: %.2f us\n", channelSpacingUs);
@@ -288,8 +308,10 @@ void loop() {
       if (noteActive[i]) {
         MIDI.sendNoteOff(drumNotes[i], 0, MIDI_CHANNEL);  // if a note-on is being sent, cancel any existing note-on state to avoid multiple note-ons
       }
-
-      MIDI.sendNoteOn(drumNotes[i], outVelocity[i], MIDI_CHANNEL);
+      // Temporarily only send midi messages for the first 8 ch 
+      // because there is no second ADC chip on the breadboard and 
+      // those last 8 inputs will read as max voltage and keep triggering
+      if (i<8) MIDI.sendNoteOn(drumNotes[i], outVelocity[i], MIDI_CHANNEL);
       noteActive[i] = true;
       noteEndTime[i] = currentMillis + 25;
     }
