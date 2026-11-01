@@ -41,7 +41,7 @@
 #define CS_CHIP1 10
 #define CS_CHIP2 9
 
-// SPI Clk should be max 2.34MHz for 3.3V power 
+// SPI Clk should be max 2.34MHz for 3.3V power
 // or 3.6MHz for 5V power on MCP3008 (from datasheet)
 #define SPI_CLK_SPEED 2340000
 //#define SPI_CLK_SPEED 3600000
@@ -308,10 +308,8 @@ void loop() {
       if (noteActive[i]) {
         MIDI.sendNoteOff(drumNotes[i], 0, MIDI_CHANNEL);  // if a note-on is being sent, cancel any existing note-on state to avoid multiple note-ons
       }
-      // Temporarily only send midi messages for the first 8 ch 
-      // because there is no second ADC chip on the breadboard and 
-      // those last 8 inputs will read as max voltage and keep triggering
-      if (i<8) MIDI.sendNoteOn(drumNotes[i], outVelocity[i], MIDI_CHANNEL);
+
+      MIDI.sendNoteOn(drumNotes[i], outVelocity[i], MIDI_CHANNEL);
       noteActive[i] = true;
       noteEndTime[i] = currentMillis + 25;
     }
