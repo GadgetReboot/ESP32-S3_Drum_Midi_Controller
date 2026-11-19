@@ -130,11 +130,11 @@ Ringing from a previous hit stays under its own envelope, so it cannot re-trigge
 
 ### 2. Peak window
 
-When a sample first crosses the threshold, the sketch collects the highest sample seen over `PEAK_WINDOW_US` and uses that as the hit's peak. Two strikes closer together than this window merge into one hit. A longer window also gives a slow-rising rubber pad time to reach its true peak, so the first note's velocity is not underestimated; a window of 3000 microseconds was the best compromise on the author's pad: 2000 caused chains of notes, 5000 raised the lightest registered velocity. The window is also the delay between the strike and the note being sent, and strikes closer than the window merge.
+When a sample first crosses the threshold, the sketch collects the highest sample seen over `PEAK_WINDOW_US` and uses that as the hit's peak. Two strikes closer together than this window merge into one hit. A longer window also gives a slow-rising rubber pad some time to reach its true peak, so the first note's velocity is not underestimated.  A window of 3000 μS was a good compromise on the test drum pad.  2000 caused chains of false triggered notes and 5000 started impacting the lightest registered velocity. The window is also the delay between the strike and the note being sent, and strikes closer than the window will merge.
 
 ### 2b. Same-strike guard
 
-A pad's plate rings as a half-wave rectified signal with humps about 5 ms apart, and the second hump can be larger than the first. If the first note has already been sent, that hump could look like a new strike. `MIN_RETRIGGER_US` (default 8000) rejects any new trigger that starts within that time of the *start* of the previous strike. It only affects strokes closer than 8 ms, which are indistinguishable from the pad's own ring anyway; real flams (typically 10 to 40 ms) and buzz-roll strokes (30 ms and up in the author's captures) are not touched. Set it to 0 to disable it. Rejections show as `SAMESTRIKE` in the blocked lines and as flag 64 in captures.
+A pad's plate rings as a half-wave rectified signal with humps about 5 ms apart, and the second hump may sometimes be larger than the first. If the first note has already been sent, that second hump could look like a new strike. `MIN_RETRIGGER_US` (default 8000) rejects any new trigger that starts within that time of the *start* of the previous strike. It only affects strokes closer than 8 ms, which are indistinguishable from the test pad's own ring.  Real fast hits like flams and buzz-roll strokes should fall outside that time window and not be impacted. Set it to 0 to disable it. Rejections show in the serial debug output as `SAMESTRIKE` in the blocked lines and as flag 64 in captures.
 
 ### 3. Hit-strength-scaled mask
 
