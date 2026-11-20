@@ -220,9 +220,8 @@ The peak, `pre` and `BLOCKED` numbers only describe a hit's level. To see what a
 **Using it.**
 
 1. Set `CAPTURE_MODE` to 1 and `CAPTURE_CHANNEL` to the channel you are testing.
-2. Play one flam (or one single hit), then wait a moment for the output.
-3. Copy everything from `CAP_BEGIN` to `CAP_END` out of the serial monitor into a text file or share it as is. Lines starting with `HIT` and `BLOCKED` are still printed normally, and can be ignored when plotting.
-4. Capture several single hard hits, several soft hits and several flams so they can be compared. After each capture the sketch re-arms itself.
+2. Play one or more hits to be captured, then wait for the capture data to appear in the serial output.
+3. To use the captured data, copy everything in the serial monitor output from `CAP_BEGIN` to `CAP_END` and put it into a text file or spreadsheet for analysis.  There may be other debug text lines within the capture data starting with `HIT` and `BLOCKED` since they are still printed normally, and they can be removed or ignored when plotting.
 
 **Output format.**
 
