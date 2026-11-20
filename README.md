@@ -242,9 +242,7 @@ CAP_END
 | `thr` | The threshold applied to this sample (0 while a hit's peak window is open) |
 | `flags` | Event markers, added together: 1 = trigger started, 2 = note sent, 4 = main mask active, 8 = second tier active, 16 = rejected as crosstalk, 32 = fresh strike, 64 = rejected by the same-strike guard |
 
-**What the first captures showed (rubber pad on a metal plate on foam).** The piezo signal after the hardware clamp is a half-wave rectified ring: humps about 5 ms apart (roughly 190 Hz) separated by about 2 ms of zero. Ring humps decay slowly, from roughly 600 to 450 over 30 ms and to under 200 after about 80 ms, and an early ring hump can be larger than the first one (612 then 668 in one hard hit). Soft hits ring at the same rate but fade much faster. Those first captures were taken while the scan task was only sampling about 45% of the time (see "The loop task must sleep" above), so repeat them after the fix before drawing conclusions about the exact shape of a flam's second stroke.
-
-Plot `raw`, `env` and `thr` against `t_us`. Things to look for: whether the second stroke of a flam shows a dip followed by a sharp rise, while plate ring decays smoothly; the interval between ring peaks; and how long a hard hit's ring stays near 90% of its first peak.
+Plot `raw`, `env` and `thr` against `t_us`. Some things to look for: whether the second stroke of a flam shows a dip followed by a sharp rise, while plate ring decays smoothly; the interval between ring peaks; and how long a hard hit's ring stays near 90% of its first peak.
 
 ---
 
