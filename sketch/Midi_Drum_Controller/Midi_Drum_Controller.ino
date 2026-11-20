@@ -169,6 +169,8 @@ const uint8_t CHANNELS_IN_USE = 8;
 #define NOISE_SETTLE_US 150000
 
 #define MIDI_CHANNEL 10              //  percussion midi channel 10
+#define USB_ENUM_RETRY_MS 5000  // if the USB host has not enumerated the device this long after boot (or after the last retry), detach and re-attach
+                                // USB to force re-enumeration, like pressing reset. 0 = off. Only acts while the device is not mounted.
 #define MAX_CHANNELS 16              //  total of 16 channels available across 2 chips to trigger midi notes
 const uint16_t MIN_THRESHOLD = 30;   //  Trigger floor: lowest ADC level that can start a hit
 const uint16_t MAX_THRESHOLD = 700;  //  Hard hit limit: net peak that maps to velocity 127
@@ -241,6 +243,7 @@ uint32_t envHoldUntilUs[MAX_CHANNELS] = { 0 };  // time until which envelope is 
 uint32_t maskUntilUs[MAX_CHANNELS] = { 0 };    // mask end time after the last hit
 uint32_t mask2UntilUs[MAX_CHANNELS] = { 0 };   // end of the optional second tier (== maskUntilUs when unused)
 uint32_t maskStartUs[MAX_CHANNELS] = { 0 };    // when the main mask began (for the relaxing override ratio)
+uint8_t maskPhase[MAX_CHANNELS] = { 0 };       // 0 = no mask, 1 = main mask active, 2 = second tier active (flag, so a long idle never re-activates an old mask)
 float maskRatioSlope[MAX_CHANNELS] = { 0 };    // change in override ratio per microsecond over this hit's mask
 float lastHitPeak[MAX_CHANNELS] = { 0 };       // peak of the last hit (used for mask override test)
 uint32_t lastHitEndUs[MAX_CHANNELS] = { 0 };   // when the last hit window finished (for idle noise settle)
@@ -575,6 +578,7 @@ void AnalogScanTask(void* pvParameters) {
 #else
           mask2UntilUs[i] = maskUntilUs[i];
 #endif
+          maskPhase[i] = 1;
           lastHitEndUs[i] = nowUs;
         }
       } else {
@@ -590,8 +594,13 @@ void AnalogScanTask(void* pvParameters) {
         // same-strike guard: still inside the first MIN_RETRIGGER_US of the previous strike (measured from its start)
         const bool sameStrike = (MIN_RETRIGGER_US > 0) && ((uint32_t)(nowUs - windowStartUs[i]) < (uint32_t)MIN_RETRIGGER_US);
 
+        // advance the mask phase. The times are only compared while a mask is active (at most about 100 ms), so the
+        // signed micros() comparison can never be fooled by the 32-bit timer rolling over during a long idle.
+        if (maskPhase[i] == 1 && (int32_t)(nowUs - maskUntilUs[i]) >= 0) maskPhase[i] = (mask2UntilUs[i] != maskUntilUs[i]) ? 2 : 0;
+        if (maskPhase[i] == 2 && (int32_t)(nowUs - mask2UntilUs[i]) >= 0) maskPhase[i] = 0;
+
         // while masked after a previous hit, a new hit must also beat that hit's peak
-        if ((int32_t)(nowUs - maskUntilUs[i]) < 0) {
+        if (maskPhase[i] == 1) {
           // override ratio relaxes linearly from MASK_OVERRIDE_RATIO to MASK_OVERRIDE_RATIO_END over the mask
           float ratio = MASK_OVERRIDE_RATIO + maskRatioSlope[i] * (float)(uint32_t)(nowUs - maskStartUs[i]);
           float maskThr = lastHitPeak[i] * ratio;
@@ -601,7 +610,7 @@ void AnalogScanTask(void* pvParameters) {
           }
         }
 #if MASK2_ENABLED
-        else if ((int32_t)(nowUs - mask2UntilUs[i]) < 0) {
+        else if (maskPhase[i] == 2) {
           // second tier (very hard hits only): late rebound must clear a fraction of the last peak
           float mask2Thr = lastHitPeak[i] * MASK2_RATIO;
           if (mask2Thr > thr) {
@@ -698,6 +707,22 @@ void setup() {
 void loop() {
   uint32_t currentMillis = millis();
   static uint32_t lastReportTime = 0;
+
+#if USB_ENUM_RETRY_MS > 0
+  // Sometimes the host never enumerates the device after plugging in. Until it is mounted, re-attach the USB
+  // connection every USB_ENUM_RETRY_MS (the same effect as pressing reset). A suspended bus (sleeping host) is left alone.
+  {
+    static uint32_t lastEnumCheckMs = 0;
+    if (TinyUSBDevice.mounted()) {
+      lastEnumCheckMs = currentMillis;
+    } else if (!TinyUSBDevice.suspended() && (currentMillis - lastEnumCheckMs) >= (uint32_t)USB_ENUM_RETRY_MS) {
+      lastEnumCheckMs = currentMillis;
+      TinyUSBDevice.detach();
+      delay(100);
+      TinyUSBDevice.attach();
+    }
+  }
+#endif
 
 #if SHOW_SECOND_REPORT
   // print debug messages every second
