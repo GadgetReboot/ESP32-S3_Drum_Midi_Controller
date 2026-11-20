@@ -258,6 +258,7 @@ All parameters are `#define` or `const` values at the top of the sketch. "Defaul
 | `SPI_CLK_SPEED` | 2340000 | SPI clock in Hz | MCP3008 maximum is 2.34 MHz at 3.3 V (3.6 MHz at 5 V) |
 | `ADC_VREF` | 3.3 | Reference voltage, only used for the printed voltage | Match your hardware |
 | `MIDI_CHANNEL` | 10 | MIDI channel for notes | Leave at 10 for percussion |
+| `USB_ENUM_RETRY_MS` | 5000 | If the computer has not recognised the device this long after power-up, the sketch detaches and re-attaches USB (like pressing reset), then repeats at the same interval until it is recognised. 0 = off | Raise if your computer is slow to enumerate; set 0 to disable |
 | `drumNotes[]` | see sketch | MIDI note per ADC channel | Change to suit your drum mapping |
 
 ### Trigger detection
@@ -446,6 +447,7 @@ Record the final values in the sketch and set `DEBUG_HITS` and `DEBUG_BLOCKED` t
 | Ghost notes at velocity 1 to 8 only | Pre-hit offset too aggressive | Lower `PRE_HIT_OFFSET_WEIGHT` |
 | Flams give one note | Override ratio or mask too strict | Read the `LATE` `BLOCKED` line (Step 6) |
 | Extra note 3 to 5 ms after a strike | Ring hump of the same strike | `MIN_RETRIGGER_US` (default 8000) |
+| Device does not show up as a MIDI controller after plugging in | USB enumeration failed at power-up | `USB_ENUM_RETRY_MS` re-attaches USB automatically; otherwise press the ESP32 reset button |
 | Neighbour pad triggers | Mechanical or electrical pickup | Raise `X_TALK_RATIO`; isolate pads |
 | Timing hiccups on busy playing | Serial output blocking | Set `DEBUG_HITS` and `DEBUG_BLOCKED` to 0 |
 | `Longest Gap Between Sweeps` around 1000 microseconds or more every second, or captures show regular blind gaps | The scan task is sharing its core with a busy `loop()` | Make sure `loop()` ends with `vTaskDelay(1)` and does not spin |
