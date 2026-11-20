@@ -213,7 +213,7 @@ Idle noise only counts quiet samples taken at least `NOISE_SETTLE_US` after the 
 
 ## Raw waveform capture
 
-The peak, `pre` and `BLOCKED` numbers only describe a hit's level. To see what a hit or a flam actually *looks like*, for example to find out whether a second flam stroke has a different shape from the ring of the first, the sketch can record one channel's raw samples and print them as CSV.
+The peak, `pre` and `BLOCKED` numbers only describe a hit's level. To see what a hit or a flam actually *looks like*, for example to find out whether a second flam stroke has a different shape from the ring of the first, the sketch can record one channel's raw samples and serial print them as CSV.
 
 **How it works.** The selected channel's samples are kept in a rolling buffer together with the envelope and threshold the sketch was using at that moment. When a *fresh* strike arrives (the channel was quiet before it), the sketch keeps recording for `CAPTURE_POST_MS` so a flam's second stroke is inside the recording, then prints it. Printing is done in small pieces from the main loop and never blocks MIDI; the once-per-second report waits until printing is finished. Triggering and MIDI are not affected.
 
