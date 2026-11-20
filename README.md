@@ -286,7 +286,7 @@ All parameters are `#define` or `const` values at the top of the sketch. "Defaul
 | --- | --- | --- | --- |
 | `MASK_MIN_US` | 3000 | Mask length after a very soft hit | Usually leave alone |
 | `MASK_MAX_US` | 40000 | Mask length after the hardest hit; scales with hit strength | Raise if hard hits still produce a second note-on. Lower to improve fast hard-hit rolls and flams. |
-| `MASK_OVERRIDE_RATIO` | 0.95 | Multiple of the previous peak a new hit must exceed **right after a hit** (start of the mask) | Raise toward 1.0 to 1.1 if early ring leaks through as extra notes. Values around 0.7 to 0.8 right after a hit let plate ring through on the author's pad. |
+| `MASK_OVERRIDE_RATIO` | 0.95 | Multiple of the previous peak a new hit must exceed **right after a hit** (start of the mask) | Raise toward 1.0 to 1.1 if early ring leaks through as extra notes. Values around 0.7 to 0.8 right after a hit let plate ring through on the test drum pad. |
 | `MASK_OVERRIDE_RATIO_END` | 0.80 | The same multiple at the **end of the main mask**; the ratio relaxes linearly between the two values | Lower to let similar-strength strokes through later in the mask (flams at 15 to 40 ms). Raise if late ring leaks through. Set equal to `MASK_OVERRIDE_RATIO` for a fixed ratio. |
 
 ### Second mask tier (optional)
