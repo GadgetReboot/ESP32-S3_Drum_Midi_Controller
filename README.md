@@ -331,20 +331,20 @@ All parameters are `#define` or `const` values at the top of the sketch. "Defaul
 
 ## Calibration guide
 
-Calibrate **one pad at a time** with the serial monitor open. Change **one setting at a time** and repeat the relevant test. Start from the defaults above.
+All ADC channels share one calibration for now, so it is assumed all trigger input hardware and mechanical response is identical. Change **one setting at a time** and repeat a test to check results. Start from the defaults above.
 
 > If you change the pad, foam, plate or piezo mounting, the ring and bounce behaviour changes. Repeat steps 3 onward after any hardware change.
 
 ### Step 0: Get a baseline
 
-1. Flash the sketch with the default values.
-2. Note the `Full-Kit Scans Per Second` value in the report. On the author's setup, before the loop task was made to sleep, it was about 4200 Hz with 8 channels and about 13500 Hz with 2 channels, and the capture showed the true sampling was about half of that with 1 ms blind gaps. With 16 channels expect roughly half the 8-channel figure. Record your own number, and check that `Longest Gap Between Sweeps` stays close to the sweep time: a higher rate with no long gaps means more samples inside the peak window and more accurate hit peaks.
-3. If you only use a few pads, set `CHANNELS_IN_USE` to match. It is the biggest single factor in the scan rate.
+1. Flash the sketch with the default values and open the serial monitor to see debug reports.
+2. Note the `Full-Kit Scans Per Second` value in the report. Check that `Longest Gap Between Sweeps` stays close to the sweep time: a higher rate with no long gaps means more samples inside the peak window and more accurate hit peaks.
+3. If you only use a few pads, set `CHANNELS_IN_USE` to match that reduced number of inputs and allow faster scanning.
 4. Confirm each pad sends the expected MIDI note in your DAW or MIDI monitor.
 
 ### Step 1: Measure idle noise and set the floor
 
-1. Leave all pads untouched for a few report intervals.
+1. Leave all pads untouched for a few seconds.
 2. Read `Noise Max` for each channel.
 3. Set `MIN_THRESHOLD` to roughly **2 times the highest noise max** you want to protect against (for example, a max of 15 gives a floor of about 30).
 
@@ -359,19 +359,21 @@ Calibrate **one pad at a time** with the serial monitor open. Change **one setti
 
 **Adjust:**
 - Soft hits too loud: raise `VEL_SCALE_LOW_PEAK`, raise `VELOCITY_CURVE_EXPONENT` above 1.0, or lower `MIN_VELOCITY`.
-- Soft hits too quiet or inconsistent: lower `VELOCITY_CURVE_EXPONENT` below 1.0, or check that `VEL_SCALE_LOW_PEAK` sits just below your lightest tap's raw `peak`.
-- Hard hits never reaching 127: lower `MAX_THRESHOLD`.
+- Soft hits too quiet or inconsistent: lower `VELOCITY_CURVE_EXPONENT` below 1.0, or check that `VEL_SCALE_LOW_PEAK` sits just below your lightest tap's raw ADC `peak` reading.
+- Hard hits never reaching velocity 127: lower `MAX_THRESHOLD`.
 
 ### Step 3: Single hard hits (one hit, one note-on)
 
 1. Play single hard hits, letting the pad ring naturally.
-2. Expect **exactly one `HIT` line** per strike.
+2. Expect **one `HIT` line** per strike.
 3. If extra `HIT` lines appear, look at their `gap` and `peak`:
    - Gap of only about 2 to 3 ms, where each hit's `pre` equals the previous hit's peak and the peaks keep rising (for example 354, then 535, then 599): this is one strike that was still rising when the peak window closed. The first note also gets a velocity that is too low. Raise `PEAK_WINDOW_US` (the default of 3000 is already above the value that caused this) and/or reduce `CHANNELS_IN_USE` to raise the scan rate. A lower override ratio does not fix this.
-   - Gap 15 to 70 ms with smaller, decaying peaks: rebound or plate ring. Raise `MASK_MAX_US` (for example 40000 to 60000), or enable and strengthen the second tier (`MASK2_ENABLED` 1, raise `MASK2_MAX_US` or `MASK2_RATIO`).
+   - Gap 15 to 70 ms with smaller, decaying peaks: stick rebound or plate ring. Raise `MASK_MAX_US` (for example 40000 to 60000), or enable and strengthen the second tier (`MASK2_ENABLED` 1, raise `MASK2_MAX_US` or `MASK2_RATIO`).
    - Test: hit hard and immediately press the stick into the pad. If the extra hit disappears, it was real stick rebound and not plate ring.
 
 If the plate bounces a lot on its foam, a mechanical fix (denser foam, damping, more mass) is usually better than ever-longer masks.
+**Note:**
+If there are sometimes single registered hits and sometimes 2 or 3 registered hits each time a single hard hit is made, it may be tolerable if everything sounds and feels natural, and it may be the best result possible with that physical setup.
 
 ### Step 4: Medium hits and consistency
 
@@ -384,7 +386,7 @@ If the plate bounces a lot on its foam, a mechanical fix (denser foam, damping, 
 
 1. Play a loud hit, then a quiet stroke 20 to 50 ms later, repeatedly.
 2. Play fast, quiet buzz rolls.
-3. Expect each stroke to produce a note, with quiet strokes at low velocity.
+3. Expect each stroke to produce a note, with quiet strokes registering hits at low velocity.
 
 **Adjust:**
 - Quiet strokes missed: lower `ENV_DECAY_TAU_US`, `RETRIG_RATIO` and `RETRIG_ABS_MARGIN`, or lower `MIN_THRESHOLD` if idle noise allows.
@@ -393,7 +395,7 @@ If the plate bounces a lot on its foam, a mechanical fix (denser foam, damping, 
 
 ### Step 6: Flams
 
-1. Play flams with both sticks close in time, at similar strength and with a soft grace note plus an accent. The default `PRE_HIT_OFFSET_WEIGHT` of 0.2 keeps a stroke from being scaled down too much by the previous stroke's tail; 0.4 made quiet buzz-roll strokes land at velocity 37 to 55 instead of 57 to 76.
+1. Play flams with both sticks close in time, at similar strength and with a soft grace note plus an accent. 
 2. Check the `HIT` lines for two notes. If only one appears, read the `BLOCKED` line:
 
 | What the `BLOCKED` line shows | Meaning | What to try |
@@ -405,18 +407,9 @@ If the plate bounces a lot on its foam, a mechanical fix (denser foam, damping, 
 | `ENVELOPE`, very short time after hit (about 3 ms or less) | Second stroke landed inside the envelope hold | Lower `ENV_HOLD_US` or `RETRIG_RATIO` (only if needed) |
 | `ENVELOPE`, longer time after hit | Envelope still decaying | Lower `ENV_DECAY_TAU_US` |
 
-3. After each change, **go back to Step 3** and confirm single hard hits still give one note.
+3. After each change, **go back to Step 3** and confirm single hard hits still give one note or an acceptable enough response rather than unexpected behaviour.
 
-**What the author's testing showed (rubber pad on a metal plate on foam):**
-
-- With `MASK_OVERRIDE_RATIO` 1.1, an equal-strength flam stroke (603 against a first hit of 605) was blocked, needing 665.
-- Lowering the override ratio to 0.8 and then 0.7, shortening `MASK_MAX_US` to 30000 and raising `MASK2_RATIO` to 0.6 let ring through. A single hard hit produced a chain of notes, each at about 60% to 90% of the first peak, because the plate was still ringing at about 90% amplitude 8 ms after the hit. **Do not go that low.**
-- On this pad, ring at 5 to 10 ms after a hard hit looks about as strong as a genuine similar-strength second stroke, so a level-based mask can only separate them in a narrow band. An override ratio around **0.95 to 1.0** is the useful range: a similar-strength stroke can pass, ring stays blocked. A flam whose second stroke is clearly quieter than about 90% of the first cannot be told apart from ring at that delay.
-- Raising `PEAK_WINDOW_US` to 5000 and scanning fewer channels removed the chains of notes 2 to 3 ms apart. After that, flams registered two notes (for example 540 then 592, and 553 then 603).
-
-The sketch defaults are the combination that gave the author clean single hits and registered flams: `MASK_MAX_US` 60000, `MASK2_MAX_US` 60000, `MASK2_RATIO` 0.5, `MASK_OVERRIDE_RATIO` 0.95 and `PEAK_WINDOW_US` 5000. `MASK_OVERRIDE_RATIO_END` (0.80) was added afterwards: a flam stroke at 93% of the first hit, 22 ms after it, was blocked by a fixed 0.95 ratio (it needed 558 and reached 547), while early ring at about 88% to 90% needed to stay blocked, so the ratio now relaxes over the mask instead of being one compromise value. If you need to adjust from there, change one value at a time in small steps and re-test single hard hits after every change. Two strikes closer than `PEAK_WINDOW_US` always merge into one hit, which is a sampling limit.
-
-If ring still gets through at the settings you need for flams, improve the pad's damping (denser foam, a damping layer, different plate mass or piezo mounting). That does more than any threshold change.
+If adjusting all the parameters doesn't improve situations where extra hits are registering, the pad may be vibrating too freely.  Improve the pad's damping (denser foam, a damping layer, different plate mass or piezo mounting). That does more than any threshold change.
 
 ### Step 7: Crosstalk between pads
 
@@ -430,13 +423,13 @@ Run through all of these again, in order, with the final values:
 
 - [ ] No hits while idle
 - [ ] Soft, medium and hard single hits each give one note with sensible velocity
-- [ ] Hardest hits reach 127
+- [ ] Hardest hits reach velocity 127
 - [ ] Ghost notes after loud hits are detected at low velocity
-- [ ] Buzz rolls are detected
-- [ ] Flams give two notes
+- [ ] Buzz rolls are detected and feel natural, not needing to play harder or more deliberately to get a good response
+- [ ] Flams give two distinct notes when the sticks have an obvious slight time separation (both sticks aren't striking perfectly together) 
 - [ ] Neighbouring pads stay quiet
 
-Record the final values in the sketch (or in a per-pad note), and set `DEBUG_HITS` and `DEBUG_BLOCKED` to 0 for normal playing if you do not want serial output.
+Record the final values in the sketch and set `DEBUG_HITS` and `DEBUG_BLOCKED` to 0 for normal playing if you do not want serial output.
 
 ---
 
@@ -463,10 +456,9 @@ Record the final values in the sketch (or in a per-pad note), and set `DEBUG_HIT
 
 ## Limitations and notes
 
-- **Occasional low-velocity note in a buzz roll.** A strike often has a small first hump and a larger one 3 to 6 ms later. With `PEAK_WINDOW_US` at 3000, the note can be sent with the first hump's peak while the larger hump is rejected by the same-strike guard. In one roll, about a quarter of the strokes showed this (a `HIT` peak of 160 to 260 followed within 5 ms by a `BLOCKED` signal of 410 to 480). A longer window (4000 to 5000) captures the larger hump but makes the lightest taps read louder, so `VEL_SCALE_LOW_PEAK` would need raising to compensate.
+- **Occasional low-velocity note in a buzz roll.** A strike often has a small first hump and a larger one 3 to 6 ms later. With `PEAK_WINDOW_US` at 3000, the note can be sent with the first hump's peak while the larger hump is rejected by the same-strike guard. A longer window (4000 to 5000) captures the larger hump but makes the lightest taps read louder, so `VEL_SCALE_LOW_PEAK` would need raising to compensate.
 
-- **Sample rate.** The scan rate reported before the loop-sleep fix (about 4200 Hz with 8 channels, about 13500 Hz with 2) was an average over blind gaps in which the scan task was not running. The captures show the real sweep time was about 118 microseconds with 8 channels, which is roughly 15 microseconds per channel read, close to the roughly 10 microsecond wire time of the 3-byte transfer at 2.34 MHz. An earlier estimate in this project that 17 microseconds per read of Arduino SPI overhead remained was wrong for that reason. There is therefore little left to gain from the SPI code itself. Writing directly to the SPI peripheral registers was tried by the author on this platform and ran into registers being ignored or overridden by the Arduino environment, so it is deliberately not used. DMA also tested slower. If more speed is needed beyond this, the better route is a faster ADC in hardware. A short peak window holding only a few samples may miss the true peak of a fast spike, so scanning fewer channels and a longer peak window both help.
-- **Tuning was done with gaps in the sampling.** The default mask, peak window and ratio values were tuned before the loop-sleep fix, when half of the samples were missing. With complete sampling, peaks are measured more accurately and rebound and ring may look different, so re-check single hard hits, flams and the `PEAK_WINDOW_US` value after upgrading.
+- **Sample rate.** Writing directly to the SPI peripheral registers was attempted to try to optimize bus speed but problems occurred such as registers being ignored or overridden by the Arduino environment. DMA also tested slower due to the small chunks of data to be moved, increasing overhead overall. If more speed is needed beyond this, the better route is a faster ADC in hardware. A short peak window holding only a few samples may miss the true peak of a fast spike, so scanning fewer channels and a longer peak window both help.
 - **Fixed note length.** Note-offs are sent 25 ms after each note-on.
 - **Pad dependence.** The mask, envelope and velocity values depend heavily on the pad, foam and mounting; recalibrate after hardware changes.
 - **Shared settings.** The tuning values apply to all channels. Per-channel values (different thresholds for a kick versus a snare pad) are not implemented, but would be a natural extension.
