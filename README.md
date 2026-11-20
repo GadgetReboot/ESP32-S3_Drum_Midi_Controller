@@ -248,13 +248,13 @@ Plot `raw`, `env` and `thr` against `t_us`. Some things to look for: whether the
 
 ## Parameter reference
 
-All parameters are `#define` or `const` values at the top of the sketch. "Default" is the value in the current sketch.
+All parameters are `#define` or `const` values at the top of the sketch. "Default" is the value used with the test drum pad.
 
 ### Hardware and scanning
 
 | Parameter | Default | What it does | When to change |
 | --- | --- | --- | --- |
-| `CHANNELS_IN_USE` | 8 | Number of ADC channels scanned (1 to 16) | Set to the number of pads actually wired. Fewer channels means a faster scan rate, more samples per hit and better peak capture. Measured before the loop-sleep fix (so roughly half the real rate): about 4200 Hz with 8 channels, about 13500 Hz with 2. |
+| `CHANNELS_IN_USE` | 8 | Number of ADC channels scanned (1 to 16) | Set to the number of pads actually wired. Fewer channels means a faster scan rate, more samples per hit and better peak capture. |
 | `SPI_CLK_SPEED` | 2340000 | SPI clock in Hz | MCP3008 maximum is 2.34 MHz at 3.3 V (3.6 MHz at 5 V) |
 | `ADC_VREF` | 3.3 | Reference voltage, only used for the printed voltage | Match your hardware |
 | `MIDI_CHANNEL` | 10 | MIDI channel for notes | Leave at 10 for percussion |
