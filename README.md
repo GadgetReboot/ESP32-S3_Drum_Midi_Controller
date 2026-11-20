@@ -303,7 +303,7 @@ All parameters are `#define` or `const` values at the top of the sketch. "Defaul
 | Parameter | Default | What it does | How to adjust |
 | --- | --- | --- | --- |
 | `PRE_HIT_OFFSET_WEIGHT` | 0.2 | 0 = ignore the signal level before the hit, 1 = subtract it fully | Lower if ghost notes after loud hits are too quiet or missing, raise if they are too loud |
-| `VEL_SCALE_LOW_PEAK` | 170 | Net peak that maps to `MIN_VELOCITY` | Raise to make the softest hits quieter. Set it just under the raw peak of your lightest intended tap on the pad (the author's lightest taps peaked at about 190 to 350, and wood-base hits lower), so the pad can reach velocity 8 while base thumps stay quiet. |
+| `VEL_SCALE_LOW_PEAK` | 170 | Net peak that maps to `MIN_VELOCITY` | Raise to make the softest hits quieter. Set it just under the raw peak of your lightest intended tap on the pad. |
 | `MIN_VELOCITY` | 8 | Lowest velocity sent | Lower for quieter ghost notes |
 | `ACTIVE_CURVE` | `CURVE_POWER` | Velocity curve: `CURVE_LINEAR`, `CURVE_SCURVE`, `CURVE_LOGARITHMIC`, `CURVE_EXPONENTIAL`, `CURVE_POWER` | Power is the adjustable one |
 | `VELOCITY_CURVE_EXPONENT` | 1.2 | Exponent for `CURVE_POWER` | Above 1 makes soft hits quieter, below 1 boosts them |
